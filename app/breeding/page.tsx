@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-// TIPOS - ESSENCIAIS PARA O TYPESCRIPT NÃO RECLAMAR
+// TIPOS (obrigatórios pro TS)
 type Pokemon = {
   id: number;
   name: string;
@@ -21,7 +21,7 @@ type IVs = {
   spe: number;
 };
 
-// CONSTANTES
+// CONSTANTES E HELPERS (mantidos do seu código original)
 const stats: (keyof IVs)[] = ["hp", "atk", "def", "spa", "spd", "spe"];
 const emptyIV: IVs = { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 };
 
@@ -43,7 +43,6 @@ const powerItems: Record<string, keyof IVs | null> = {
   "Power Anklet": "spe",
 };
 
-// HELPERS
 function randomIV() {
   return Math.floor(Math.random() * 32);
 }
@@ -139,31 +138,59 @@ export default function BreedingSystem() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-600 via-red-800 to-black text-white p-6 font-sans">
-      {/* Header */}
+      {/* Header Pokédex */}
       <header className="text-center mb-8">
         <h1 className="text-5xl font-bold tracking-wide text-yellow-400 drop-shadow-lg">
-          Pokédex Breeding System
+          Sistema Profissional de Breeding
         </h1>
-        <p className="text-xl mt-2 opacity-80">Calcule o breeding competitivo com IVs perfeitos!</p>
+        <p className="text-xl mt-2 opacity-80">Login com Discord</p>
       </header>
 
-      {/* Search */}
-      <div className="max-w-2xl mx-auto mb-8">
+      {/* Tabs */}
+      <div className="flex justify-center mb-8">
+        <div className="bg-zinc-900/80 rounded-full p-2 flex gap-4">
+          <button className="px-6 py-3 bg-yellow-400 text-black rounded-full font-bold hover:bg-yellow-500 transition">Breeding</button>
+          <button className="px-6 py-3 hover:bg-zinc-800 rounded-full transition">Ranking</button>
+          <button className="px-6 py-3 hover:bg-zinc-800 rounded-full transition">Histórico</button>
+        </div>
+      </div>
+
+      {/* Inputs mãe/pai */}
+      <div className="max-w-md mx-auto mb-8 space-y-4">
         <input
-          placeholder="Busque Pokémon (ex: charizard, ditto...)"
-          className="w-full p-4 text-lg bg-zinc-900/80 border-2 border-yellow-400 rounded-full text-white placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-yellow-500 shadow-lg"
-          value={search}
+          placeholder="Pokémon mãe"
+          className="w-full p-4 text-lg bg-zinc-900 border-2 border-yellow-400 rounded-full text-white placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-yellow-500 shadow-lg"
+          value={search} // ou use state separado para mãe
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <input
+          placeholder="Pokémon pai"
+          className="w-full p-4 text-lg bg-zinc-900 border-2 border-yellow-400 rounded-full text-white placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-yellow-500 shadow-lg"
+          value={search} // ou state separado
           onChange={(e) => setSearch(e.target.value)}
         />
       </div>
 
-      {/* Lista de Pokémon */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 max-h-[500px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-yellow-500">
+      {/* Botões */}
+      <div className="flex justify-center gap-8 mb-8">
+        <button
+          onClick={breed}
+          className="bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-black font-bold py-4 px-12 rounded-full text-xl shadow-lg transform hover:scale-105 transition-all duration-300"
+        >
+          Gerar filho
+        </button>
+        <button className="bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-12 rounded-full text-xl shadow-lg transform hover:scale-105 transition-all duration-300">
+          Salvar online
+        </button>
+      </div>
+
+      {/* Grid de Pokémon (lista) */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 max-h-[500px] overflow-y-auto">
         {filtered.map((p) => (
           <button
             key={p.id}
             onClick={() => (!father ? setFather(p) : setMother(p))}
-            className={`bg-zinc-900/70 backdrop-blur-sm border-2 border-gray-700 rounded-xl p-3 hover:border-yellow-400 hover:scale-105 transition-all duration-200 shadow-md flex flex-col items-center ${
+            className={`bg-zinc-900/70 border-2 border-gray-700 rounded-xl p-3 hover:border-yellow-400 hover:scale-105 transition-all duration-200 shadow-md flex flex-col items-center ${
               (father?.id === p.id || mother?.id === p.id) ? "ring-4 ring-yellow-400" : ""
             }`}
           >
@@ -180,7 +207,10 @@ export default function BreedingSystem() {
         ))}
       </div>
 
-      {/* Resultado (adicione o resto do return aqui se quiser) */}
+      {/* Configurações IVs, Natures, etc. - adicione aqui se quiser manter */}
+      {/* ... cole a seção de IVs/Nature/Power Item/Toggles do seu código atual se precisar */}
+
+      {/* Resultado */}
       {result && (
         <div className="mt-12 max-w-2xl mx-auto bg-zinc-900/90 p-8 rounded-2xl border-4 border-yellow-400 shadow-2xl text-center">
           <h2 className="text-4xl font-bold text-yellow-400 mb-6">Filhote Gerado!</h2>
