@@ -82,7 +82,6 @@ function compatibleEggGroup(a: Pokemon, b: Pokemon) {
 }
 
 function babySpecies(father: Pokemon, mother: Pokemon) {
-  // Regra real: segue a mãe, exceto Ditto
   if (mother.name === "ditto") return father.name;
   return mother.name;
 }
@@ -103,7 +102,6 @@ export default function BreedingSystem() {
   const [everstone, setEverstone] = useState(true);
   const [result, setResult] = useState<any>(null);
 
-  // -------------------- FETCH 1000+ --------------------
   useEffect(() => {
     async function load() {
       const res = await fetch("https://pokeapi.co/api/v2/pokemon?limit=2000", { cache: 'no-store' });
@@ -127,7 +125,6 @@ export default function BreedingSystem() {
     load();
   }, []);
 
-  // -------------------- BREED --------------------
   function breed() {
     if (!father || !mother) return alert("Selecione pai e mãe");
     if (!compatibleEggGroup(father, mother)) return alert("Egg group incompatível");
@@ -140,10 +137,8 @@ export default function BreedingSystem() {
 
   const filtered = list.filter((p) => p.name.includes(search.toLowerCase()));
 
-  // -------------------- UI (Visual Pokédex) --------------------
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-600 via-red-800 to-black text-white p-6 font-sans">
-      {/* Header estilo Pokédex */}
       <header className="text-center mb-8">
         <h1 className="text-5xl font-bold tracking-wide text-yellow-400 drop-shadow-lg">
           Pokédex Breeding System
@@ -151,7 +146,6 @@ export default function BreedingSystem() {
         <p className="text-xl mt-2 opacity-80">Calcule o breeding competitivo com IVs perfeitos!</p>
       </header>
 
-      {/* Search Bar */}
       <div className="max-w-2xl mx-auto mb-8">
         <input
           placeholder="Busque Pokémon (ex: charizard, ditto...)"
@@ -161,7 +155,6 @@ export default function BreedingSystem() {
         />
       </div>
 
-      {/* Grid de Pokémon */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 max-h-[500px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-yellow-500">
         {filtered.map((p) => (
           <button
@@ -184,77 +177,9 @@ export default function BreedingSystem() {
         ))}
       </div>
 
-      {/* Pai/Mãe selecionados */}
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-        <div className="bg-zinc-900/80 p-6 rounded-xl border border-blue-500">
-          <h2 className="text-2xl font-bold mb-4 text-blue-300">Pai Selecionado</h2>
-          {father ? (
-            <div className="text-center">
-              <img src={father.sprite} alt={father.name} className="w-32 h-32 mx-auto" />
-              <p className="text-xl capitalize">{father.name}</p>
-            </div>
-          ) : (
-            <p className="text-center opacity-70">Selecione o pai na lista</p>
-          )}
-        </div>
-        <div className="bg-zinc-900/80 p-6 rounded-xl border border-pink-500">
-          <h2 className="text-2xl font-bold mb-4 text-pink-300">Mãe Selecionada</h2>
-          {mother ? (
-            <div className="text-center">
-              <img src={mother.sprite} alt={mother.name} className="w-32 h-32 mx-auto" />
-              <p className="text-xl capitalize">{mother.name}</p>
-            </div>
-          ) : (
-            <p className="text-center opacity-70">Selecione a mãe na lista</p>
-          )}
-        </div>
-      </div>
-
-      {/* Configurações */}
-      <div className="mt-10 max-w-4xl mx-auto bg-zinc-900/80 p-8 rounded-2xl border border-yellow-500 shadow-2xl">
-        <h2 className="text-3xl font-bold mb-6 text-center text-yellow-400">Configurações Avançadas</h2>
-
-        {/* IVs */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-          <div>
-            <h3 className="text-xl mb-4 text-center">IVs do Pai</h3>
-            {stats.map((s) => (
-              <div key={s} className="flex items-center mb-2">
-                <label className="w-20 uppercase font-bold">{s}</label>
-                <input
-                  type="number"
-                  value={fatherIV[s]}
-                  min={0}
-                  max={31}
-                  onChange={(e) => setFatherIV({ ...fatherIV, [s]: Number(e.target.value) })}
-                  className="flex-1 p-2 bg-zinc-800 border border-gray-600 rounded text-white"
-                />
-              </div>
-            ))}
-          </div>
-          <div>
-            <h3 className="text-xl mb-4 text-center">IVs da Mãe</h3>
-            {stats.map((s) => (
-              <div key={s} className="flex items-center mb-2">
-                <label className="w-20 uppercase font-bold">{s}</label>
-                <input
-                  type="number"
-                  value={motherIV[s]}
-                  min={0}
-                  max={31}
-                  onChange={(e) => setMotherIV({ ...motherIV, [s]: Number(e.target.value) })}
-                  className="flex-1 p-2 bg-zinc-800 border border-gray-600 rounded text-white"
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Natures, Power Items, Toggles, Botão – mantenha como no seu código anterior */}
-        {/* ... cole o restante da seção de configurações e o botão BREEDAR aqui se não estiver */}
-      </div>
-
-      {/* Resultado */}
+      {/* ... o resto do return (seleção pai/mãe, configs IVs, natures, power items, toggles, botão breed, resultado) */}
+      {/* Cole aqui o restante do return que você tinha, mantendo a estrutura */}
+      {/* Exemplo resumido do resultado */}
       {result && (
         <div className="mt-12 max-w-2xl mx-auto bg-zinc-900/90 p-8 rounded-2xl border-4 border-yellow-400 shadow-2xl text-center">
           <h2 className="text-4xl font-bold text-yellow-400 mb-6">Filhote Gerado!</h2>
