@@ -1,204 +1,247 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-// ================= CONFIG =================
+// -------------------- TIPOS --------------------
+type Pokemon = {
+  id: number;
+  name: string;
+  sprite: string;
+  gender_rate: number;
+  egg_groups: string[];
+  is_legendary: boolean;
+};
+type IVs = {
+  hp: number;
+  atk: number;
+  def: number;
+  spa: number;
+  spd: number;
+  spe: number;
+};
 
-const STATS = ["HP", "Atk", "Def", "SpA", "SpD", "Spe"] as const;
-const MAX_IV = 31;
+// -------------------- CONSTANTES --------------------
+const stats: (keyof IVs)[] = ["hp", "atk", "def", "spa", "spd", "spe"];
+const emptyIV: IVs = { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 };
+const natures = [
+  "Hardy","Lonely","Brave","Adamant","Naughty",
+  "Bold","Docile","Relaxed","Impish","Lax",
+  "Timid","Hasty","Serious","Jolly","Naive",
+  "Modest","Mild","Quiet","Bashful","Rash",
+  "Calm","Gentle","Sassy","Careful","Quirky"
+];
+const powerItems: Record<string, keyof IVs | null> = {
+  Nenhum: null,
+  "Power Weight": "hp",
+  "Power Bracer": "atk",
+  "Power Belt": "def",
+  "Power Lens": "spa",
+  "Power Band": "spd",
+  "Power Anklet": "spe",
+};
 
-// ================= SUPABASE SETUP =================
-
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
-// ================= UTIL =================
-
+// -------------------- HELPERS --------------------
 function randomIV() {
-  return Math.floor(Math.random() * (MAX_IV + 1));
+  return Math.floor(Math.random() * 32);
 }
-
-function inheritIVs(mother: number[], father: number[]) {
-  const child = Array(6).fill(0);
-
-  const chosen = new Set<number>();
-  while (chosen.size < 5) chosen.add(Math.floor(Math.random() * 6));
-
-  chosen.forEach((i) => {
-    child[i] = Math.random() < 0.5 ? mother[i] : father[i];
-  });
-
-  for (let i = 0; i < 6; i++) {
-    if (!chosen.has(i)) child[i] = randomIV();
+function genderFromRate(rate: number) {
+  if (rate === -1) return "Genderless";
+  const femaleChance = rate / 8;
+  return Math.random() < femaleChance ? "Female" : "Male";
+}
+function inheritIVs(
+  father: IVs,
+  mother: IVs,
+  destiny: boolean,
+  powerFather: keyof IVs | null,
+  powerMother: keyof IVs | null
+): IVs {
+  const result: IVs = {
+    hp: randomIV(), atk: randomIV(), def: randomIV(),
+    spa: randomIV(), spd: randomIV(), spe: randomIV()
+  };
+  const inherited = destiny ? 5 : 3;
+  const shuffled = [...stats].sort(() => Math.random() - 0.5);
+  for (let i = 0; i < inherited; i++) {
+    const s = shuffled[i];
+    result[s] = Math.random() < 0.5 ? father[s] : mother[s];
   }
-
-  return child;
+  if (powerFather) result[powerFather] = father[powerFather];
+  if (powerMother) result[powerMother] = mother[powerMother];
+  return result;
+}
+function compatibleEggGroup(a: Pokemon, b: Pokemon) {
+  if (a.name === "ditto" || b.name === "ditto") return true;
+  return a.egg_groups.some((g) => b.egg_groups.includes(g));
+}
+function babySpecies(father: Pokemon, mother: Pokemon) {
+  if (mother.name === "ditto") return father.name;
+  return mother.name;
 }
 
-// ================= COMPONENT =================
+// -------------------- COMPONENTE --------------------
+export default function BreedingSystem() {
+  const [list, setList] = useState<Pokemon[]>([]);
+  const [searchFather, setSearchFather] = useState(""); // Busca separada pro Pai
+  const [searchMother, setSearchMother] = useState(""); // Busca separada pra Mãe
+  const [father, setFather] = useState<Pokemon | null>(null);
+  const [mother, setMother] = useState<Pokemon | null>(null);
+  const [fatherIV, setFatherIV] = useState<IVs>(emptyIV);
+  const [motherIV, setMotherIV] = useState<IVs>(emptyIV);
+  const [natureFather, setNatureFather] = useState("Timid");
+  const [natureMother, setNatureMother] = useState("Jolly");
+  const [powerFather, setPowerFather] = useState<keyof IVs | null>(null);
+  const [powerMother, setPowerMother] = useState<keyof IVs | null>(null);
+  const [destiny, setDestiny] = useState(true);
+  const [everstone, setEverstone] = useState(true);
+  const [result, setResult] = useState<any>(null);
 
-export default function Home() {
-  const [pokemonList, setPokemonList] = useState<string[]>([]);
-  const [pokemon1, setPokemon1] = useState("");
-  const [pokemon2, setPokemon2] = useState("");
-
-  const [ivsMother, setIvsMother] = useState<number[]>(Array(6).fill(31));
-  const [ivsFather, setIvsFather] = useState<number[]>(Array(6).fill(31));
-
-  const [natureMother] = useState("Adamant");
-  const [natureFather] = useState("Adamant");
-
-  const [result, setResult] = useState<string | null>(null);
-  const [childIVs, setChildIVs] = useState<number[] | null>(null);
-
-  const [user, setUser] = useState<any>(null);
-  const [ranking, setRanking] = useState<any[]>([]);
-
-  // ================= LOAD ALL 1000+ POKÉMON =================
-
+  // -------------------- FETCH 1000+ --------------------
   useEffect(() => {
-    async function loadPokemon() {
+    async function load() {
       const res = await fetch("https://pokeapi.co/api/v2/pokemon?limit=2000");
       const data = await res.json();
-      setPokemonList(data.results.map((p: any) => p.name));
+      const detailed: Pokemon[] = await Promise.all(
+        data.results.map(async (p: any) => {
+          const poke = await fetch(p.url).then((r) => r.json());
+          const species = await fetch(poke.species.url).then((r) => r.json());
+          return {
+            id: poke.id,
+            name: poke.name,
+            sprite: poke.sprites.front_default,
+            gender_rate: species.gender_rate,
+            egg_groups: species.egg_groups.map((g: any) => g.name),
+            is_legendary: species.is_legendary,
+          };
+        })
+      );
+      setList(detailed.filter((p) => !p.is_legendary));
     }
-
-    loadPokemon();
+    load();
   }, []);
 
-  // ================= AUTH DISCORD =================
-
-  async function loginDiscord() {
-    await supabase.auth.signInWithOAuth({ provider: "discord" });
-  }
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUser(data.user));
-  }, []);
-
-  // ================= BREED =================
-
+  // -------------------- BREED --------------------
   function breed() {
-    if (!pokemon1 || !pokemon2) {
-      setResult("Selecione os dois Pokémon.");
-      return;
-    }
-
-    const child = inheritIVs(ivsMother, ivsFather);
-    const nature = Math.random() < 0.5 ? natureMother : natureFather;
-
-    setChildIVs(child);
-    setResult(`Filhote: ${pokemon1} | Nature: ${nature}`);
+    if (!father || !mother) return alert("Selecione pai e mãe");
+    if (!compatibleEggGroup(father, mother)) return alert("Egg group incompatível");
+    const ivs = inheritIVs(fatherIV, motherIV, destiny, powerFather, powerMother);
+    const gender = genderFromRate(mother.gender_rate);
+    const nature = everstone ? natureMother : natures[Math.floor(Math.random() * natures.length)];
+    const baby = babySpecies(father, mother);
+    setResult({ species: baby, ivs, gender, nature });
   }
 
-  // ================= SAVE ONLINE =================
+  const filteredFather = list.filter((p) => p.name.includes(searchFather.toLowerCase()));
+  const filteredMother = list.filter((p) => p.name.includes(searchMother.toLowerCase()));
 
-  async function saveBreed() {
-    if (!user || !childIVs) return alert("Faça login primeiro");
-
-    await supabase.from("breeds").insert({
-      user_id: user.id,
-      pokemon: pokemon1,
-      ivs: childIVs,
-    });
-
-    loadRanking();
-    alert("Breed salvo online!");
-  }
-
-  // ================= RANKING =================
-
-  async function loadRanking() {
-    const { data } = await supabase
-      .from("breeds")
-      .select("user_id")
-      .order("user_id", { ascending: true });
-
-    const counts: Record<string, number> = {};
-
-    data?.forEach((b: any) => {
-      counts[b.user_id] = (counts[b.user_id] || 0) + 1;
-    });
-
-    const sorted = Object.entries(counts)
-      .map(([user, total]) => ({ user, total }))
-      .sort((a, b) => b.total - a.total);
-
-    setRanking(sorted);
-  }
-
-  useEffect(() => {
-    loadRanking();
-  }, []);
-
-  // ================= UI =================
-
+  // -------------------- UI --------------------
   return (
-    <main className="min-h-screen bg-black text-white flex items-center justify-center p-6">
-      <Card className="w-full max-w-3xl bg-zinc-900 text-white">
-        <CardContent className="flex flex-col gap-4 p-6">
-          <h1 className="text-2xl font-bold text-center">Sistema Profissional de Breeding</h1>
+    <div className="p-6 text-white bg-black min-h-screen">
+      <h1 className="text-3xl font-bold mb-4">Breeding Competitivo</h1>
 
-          {!user && <Button onClick={loginDiscord}>Login com Discord</Button>}
+      {/* SEÇÃO PAI e MÃE lado a lado */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        {/* PAI */}
+        <div>
+          <h2 className="text-2xl font-bold mb-2 text-blue-400">Pai</h2>
+          <input
+            placeholder="Buscar Pokémon Pai..."
+            className="w-full p-2 mb-4 bg-zinc-900 rounded border border-blue-500 focus:border-blue-400"
+            value={searchFather}
+            onChange={(e) => setSearchFather(e.target.value)}
+          />
+          <div className="grid grid-cols-4 gap-2 max-h-64 overflow-auto">
+            {filteredFather.map((p) => (
+              <button
+                key={p.id}
+                className={`bg-zinc-900 p-2 rounded text-xs border ${father?.id === p.id ? "border-blue-500 ring-2 ring-blue-500" : "border-zinc-700"} hover:border-blue-400`}
+                onClick={() => setFather(p)}
+              >
+                {p.name}
+              </button>
+            ))}
+          </div>
+        </div>
 
-          <Tabs defaultValue="breed">
-            <TabsList className="grid grid-cols-3">
-              <TabsTrigger value="breed">Breeding</TabsTrigger>
-              <TabsTrigger value="ranking">Ranking</TabsTrigger>
-              <TabsTrigger value="history">Histórico</TabsTrigger>
-            </TabsList>
+        {/* MÃE */}
+        <div>
+          <h2 className="text-2xl font-bold mb-2 text-pink-400">Mãe</h2>
+          <input
+            placeholder="Buscar Pokémon Mãe..."
+            className="w-full p-2 mb-4 bg-zinc-900 rounded border border-pink-500 focus:border-pink-400"
+            value={searchMother}
+            onChange={(e) => setSearchMother(e.target.value)}
+          />
+          <div className="grid grid-cols-4 gap-2 max-h-64 overflow-auto">
+            {filteredMother.map((p) => (
+              <button
+                key={p.id}
+                className={`bg-zinc-900 p-2 rounded text-xs border ${mother?.id === p.id ? "border-pink-500 ring-2 ring-pink-500" : "border-zinc-700"} hover:border-pink-400`}
+                onClick={() => setMother(p)}
+              >
+                {p.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
 
-            <TabsContent value="breed" className="flex flex-col gap-3">
-              <Input placeholder="Pokémon mãe" list="pokemon" value={pokemon1} onChange={(e) => setPokemon1(e.target.value)} />
-              <Input placeholder="Pokémon pai" list="pokemon" value={pokemon2} onChange={(e) => setPokemon2(e.target.value)} />
+      {/* IVs */}
+      <div className="mt-6 grid grid-cols-2 gap-4">
+        <div>
+          <h2>IVs do Pai</h2>
+          {stats.map((s) => (
+            <input key={s} type="number" value={fatherIV[s]} min={0} max={31}
+              onChange={(e) => setFatherIV({ ...fatherIV, [s]: Number(e.target.value) })}
+              className="w-full bg-zinc-900 p-1 mb-1" />
+          ))}
+        </div>
+        <div>
+          <h2>IVs da Mãe</h2>
+          {stats.map((s) => (
+            <input key={s} type="number" value={motherIV[s]} min={0} max={31}
+              onChange={(e) => setMotherIV({ ...motherIV, [s]: Number(e.target.value) })}
+              className="w-full bg-zinc-900 p-1 mb-1" />
+          ))}
+        </div>
+      </div>
 
-              <datalist id="pokemon">
-                {pokemonList.map((p) => (
-                  <option key={p} value={p} />
-                ))}
-              </datalist>
+      {/* Natures */}
+      <div className="grid grid-cols-2 gap-4 mt-4">
+        <select value={natureFather} onChange={(e) => setNatureFather(e.target.value)} className="bg-zinc-900 p-2">
+          {natures.map((n) => <option key={n}>{n}</option>)}
+        </select>
+        <select value={natureMother} onChange={(e) => setNatureMother(e.target.value)} className="bg-zinc-900 p-2">
+          {natures.map((n) => <option key={n}>{n}</option>)}
+        </select>
+      </div>
 
-              <Button onClick={breed}>Gerar filhote</Button>
-              <Button onClick={saveBreed} variant="secondary">Salvar online</Button>
+      {/* Power Items */}
+      <div className="grid grid-cols-2 gap-4 mt-4">
+        <select onChange={(e) => setPowerFather(powerItems[e.target.value])} className="bg-zinc-900 p-2">
+          {Object.keys(powerItems).map((k) => <option key={k}>{k}</option>)}
+        </select>
+        <select onChange={(e) => setPowerMother(powerItems[e.target.value])} className="bg-zinc-900 p-2">
+          {Object.keys(powerItems).map((k) => <option key={k}>{k}</option>)}
+        </select>
+      </div>
 
-              {result && <p className="text-center">{result}</p>}
+      {/* Toggles */}
+      <div className="mt-4 space-x-4">
+        <label><input type="checkbox" checked={destiny} onChange={(e) => setDestiny(e.target.checked)} /> Destiny Knot</label>
+        <label><input type="checkbox" checked={everstone} onChange={(e) => setEverstone(e.target.checked)} /> Everstone</label>
+      </div>
 
-              {childIVs && (
-                <div className="grid grid-cols-3 gap-2">
-                  {childIVs.map((v, i) => (
-                    <div key={i} className="bg-zinc-800 p-2 rounded text-center">
-                      {STATS[i]}: {v}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </TabsContent>
+      <button onClick={breed} className="mt-6 bg-blue-600 px-4 py-2 rounded">BREEDAR</button>
 
-            <TabsContent value="ranking">
-              <div className="flex flex-col gap-2">
-                {ranking.map((r, i) => (
-                  <div key={i} className="bg-zinc-800 p-3 rounded flex justify-between">
-                    <span>Player {r.user}</span>
-                    <span>{r.total} breeds</span>
-                  </div>
-                ))}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="history">
-              <p>Histórico online em breve…</p>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-    </main>
+      {result && (
+        <div className="mt-6 bg-zinc-900 p-4 rounded">
+          <h2 className="text-xl">Filhote: {result.species}</h2>
+          <p>Gênero: {result.gender}</p>
+          <p>Nature: {result.nature}</p>
+          <pre className="text-xs">{JSON.stringify(result.ivs, null, 2)}</pre>
+        </div>
+      )}
+    </div>
   );
 }
