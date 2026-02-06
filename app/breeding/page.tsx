@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-// -------------------- TIPOS --------------------
+// -------------------- TIPOS (essenciais pro TS não reclamar) --------------------
 type Pokemon = {
   id: number;
   name: string;
@@ -26,11 +26,11 @@ const stats: (keyof IVs)[] = ["hp", "atk", "def", "spa", "spd", "spe"];
 const emptyIV: IVs = { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 };
 
 const natures = [
-  "Hardy", "Lonely", "Brave", "Adamant", "Naughty",
-  "Bold", "Docile", "Relaxed", "Impish", "Lax",
-  "Timid", "Hasty", "Serious", "Jolly", "Naive",
-  "Modest", "Mild", "Quiet", "Bashful", "Rash",
-  "Calm", "Gentle", "Sassy", "Careful", "Quirky"
+  "Hardy","Lonely","Brave","Adamant","Naughty",
+  "Bold","Docile","Relaxed","Impish","Lax",
+  "Timid","Hasty","Serious","Jolly","Naive",
+  "Modest","Mild","Quiet","Bashful","Rash",
+  "Calm","Gentle","Sassy","Careful","Quirky"
 ];
 
 const powerItems: Record<string, keyof IVs | null> = {
@@ -177,9 +177,8 @@ export default function BreedingSystem() {
         ))}
       </div>
 
-      {/* ... o resto do return (seleção pai/mãe, configs IVs, natures, power items, toggles, botão breed, resultado) */}
-      {/* Cole aqui o restante do return que você tinha, mantendo a estrutura */}
-      {/* Exemplo resumido do resultado */}
+      {/* Adicione aqui o restante do return: pai/mãe selecionados, configs IVs, natures, power items, toggles, botão breed e resultado */}
+      {/* Exemplo mínimo do resultado */}
       {result && (
         <div className="mt-12 max-w-2xl mx-auto bg-zinc-900/90 p-8 rounded-2xl border-4 border-yellow-400 shadow-2xl text-center">
           <h2 className="text-4xl font-bold text-yellow-400 mb-6">Filhote Gerado!</h2>
