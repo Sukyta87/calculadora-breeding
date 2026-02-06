@@ -143,17 +143,17 @@ export default function BreedingSystem() {
         {filtered.map((p) => (
           <button
             key={p.id}
-            className="bg-zinc-900 p-2 rounded text-xs flex flex-col items-center"
+            className="bg-zinc-900 p-2 rounded text-xs flex flex-col items-center justify-center"
             onClick={() => (!father ? setFather(p) : setMother(p))}
           >
             {p.sprite ? (
-              <img 
-                src={p.sprite} 
-                alt={p.name} 
-                className="w-12 h-12 object-contain mb-1" 
+              <img
+                src={p.sprite}
+                alt={p.name}
+                className="w-12 h-12 object-contain mb-1"
               />
             ) : (
-              <div className="w-12 h-12 bg-zinc-800 rounded-full mb-1 flex items-center justify-center text-[10px]">
+              <div className="w-12 h-12 bg-zinc-800 rounded mb-1 flex items-center justify-center text-[10px]">
                 ?
               </div>
             )}
