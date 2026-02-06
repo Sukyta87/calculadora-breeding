@@ -82,7 +82,8 @@ function babySpecies(father: Pokemon, mother: Pokemon) {
 // -------------------- COMPONENTE --------------------
 export default function BreedingSystem() {
   const [list, setList] = useState<Pokemon[]>([]);
-  const [search, setSearch] = useState("");
+  const [searchFather, setSearchFather] = useState("");
+  const [searchMother, setSearchMother] = useState("");
   const [father, setFather] = useState<Pokemon | null>(null);
   const [mother, setMother] = useState<Pokemon | null>(null);
   const [fatherIV, setFatherIV] = useState<IVs>(emptyIV);
@@ -128,38 +129,80 @@ export default function BreedingSystem() {
     setResult({ species: baby, ivs, gender, nature });
   }
 
-  const filtered = list.filter((p) => p.name.includes(search.toLowerCase()));
+  const filteredFather = list.filter((p) => p.name.includes(searchFather.toLowerCase()));
+  const filteredMother = list.filter((p) => p.name.includes(searchMother.toLowerCase()));
 
   return (
     <div className="p-6 text-white bg-black min-h-screen">
       <h1 className="text-3xl font-bold mb-4">Breeding Competitivo</h1>
-      <input
-        placeholder="Buscar Pokémon..."
-        className="w-full p-2 mb-4 bg-zinc-900 rounded"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-      />
-      <div className="grid grid-cols-6 gap-2 max-h-64 overflow-auto">
-        {filtered.map((p) => (
-          <button
-            key={p.id}
-            className="bg-zinc-900 p-2 rounded text-xs flex flex-col items-center justify-center"
-            onClick={() => (!father ? setFather(p) : setMother(p))}
-          >
-            {p.sprite ? (
-              <img
-                src={p.sprite}
-                alt={p.name}
-                className="w-12 h-12 object-contain mb-1"
-              />
-            ) : (
-              <div className="w-12 h-12 bg-zinc-800 rounded mb-1 flex items-center justify-center text-[10px]">
-                ?
-              </div>
-            )}
-            <span className="capitalize">{p.name}</span>
-          </button>
-        ))}
+
+      {/* PAI e MÃE lado a lado */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        {/* PAI */}
+        <div>
+          <h2 className="text-2xl font-bold mb-2 text-blue-400">Pai</h2>
+          <input
+            placeholder="Buscar Pokémon Pai..."
+            className="w-full p-2 mb-2 bg-zinc-900 rounded border border-blue-500 focus:border-blue-400"
+            value={searchFather}
+            onChange={(e) => setSearchFather(e.target.value)}
+          />
+          <div className="grid grid-cols-6 gap-2 max-h-64 overflow-auto">
+            {filteredFather.map((p) => (
+              <button
+                key={p.id}
+                className={`bg-zinc-900 p-2 rounded text-xs flex flex-col items-center justify-center border ${father?.id === p.id ? "border-blue-500" : "border-zinc-700"}`}
+                onClick={() => setFather(p)}
+              >
+                {p.sprite ? (
+                  <img
+                    src={p.sprite}
+                    alt={p.name}
+                    className="w-12 h-12 object-contain mb-1"
+                  />
+                ) : (
+                  <div className="w-12 h-12 bg-zinc-800 rounded mb-1 flex items-center justify-center text-[10px]">
+                    ?
+                  </div>
+                )}
+                <span className="capitalize">{p.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* MÃE */}
+        <div>
+          <h2 className="text-2xl font-bold mb-2 text-pink-400">Mãe</h2>
+          <input
+            placeholder="Buscar Pokémon Mãe..."
+            className="w-full p-2 mb-2 bg-zinc-900 rounded border border-pink-500 focus:border-pink-400"
+            value={searchMother}
+            onChange={(e) => setSearchMother(e.target.value)}
+          />
+          <div className="grid grid-cols-6 gap-2 max-h-64 overflow-auto">
+            {filteredMother.map((p) => (
+              <button
+                key={p.id}
+                className={`bg-zinc-900 p-2 rounded text-xs flex flex-col items-center justify-center border ${mother?.id === p.id ? "border-pink-500" : "border-zinc-700"}`}
+                onClick={() => setMother(p)}
+              >
+                {p.sprite ? (
+                  <img
+                    src={p.sprite}
+                    alt={p.name}
+                    className="w-12 h-12 object-contain mb-1"
+                  />
+                ) : (
+                  <div className="w-12 h-12 bg-zinc-800 rounded mb-1 flex items-center justify-center text-[10px]">
+                    ?
+                  </div>
+                )}
+                <span className="capitalize">{p.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* IVs */}
